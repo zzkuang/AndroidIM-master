@@ -204,12 +204,15 @@ public class FriendList extends ListActivity
 						System.currentTimeMillis());*/
 
 				Intent i = new Intent(this, UnApprovedFriendList.class);
-				i.putExtra(FriendInfo.FRIEND_LIST, tmp);				
+				//i.removeExtra(FriendInfo.FRIEND_LIST);
+				i.putExtra(FriendInfo.FRIEND_LIST, tmp);
+
 
 				PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-						i, 0);
+						i, PendingIntent.FLAG_UPDATE_CURRENT );
 
-				mBuilder.setContentText("You have new friend request(s)");
+
+				mBuilder.setContentText("You have new friend request(s): " + tmp);
 				/*notification.setLatestEventInfo(this, getText(R.string.new_friend_request_exist),
 												"You have new friend request(s)", 
 												contentIntent);*/

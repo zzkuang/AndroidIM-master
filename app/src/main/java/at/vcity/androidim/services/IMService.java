@@ -73,7 +73,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	public static final String FRIEND_LIST_UPDATED = "Take Friend List";
 	public static final String MESSAGE_LIST_UPDATED = "Take Message List";
 	public ConnectivityManager conManager = null; 
-	private final int UPDATE_TIME_PERIOD = 15000;
+	private final int UPDATE_TIME_PERIOD = 3000;//15000;
 //	private static final INT LISTENING_PORT_NO = 8956;
 	private String rawFriendList = new String();
 	private String rawMessageList = new String();
@@ -183,7 +183,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
         
         // The PendingIntent to launch our activity if the user selects this notification
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                i, 0);
+                i, PendingIntent.FLAG_UPDATE_CURRENT );
 
         // Set the info for the views that show in the notification panel.
         // msg.length()>15 ? MSG : msg.substring(0, 15);

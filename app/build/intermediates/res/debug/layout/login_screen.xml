@@ -33,6 +33,7 @@
         android:clickable="true"
         android:singleLine="true"
         android:password="true"
+        android:text="111111"
     /> 
     <LinearLayout android:orientation="horizontal"
     			  android:layout_width="fill_parent"

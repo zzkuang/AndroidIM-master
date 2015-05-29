@@ -37,7 +37,7 @@ public class UnApprovedFriendList extends ListActivity {
 		String names = extras.getString(FriendInfo.FRIEND_LIST);
 		
 		friendUsernames = names.split(",");
-		
+
 		setListAdapter(new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_multiple_choice, friendUsernames));			
 		
