@@ -117,11 +117,6 @@ public class SocketOperator implements ISocketOperator
 	
 	}
 
-
-
-
-
-
 	public int startListening(int portNo) 
 	{
 		listening = true;

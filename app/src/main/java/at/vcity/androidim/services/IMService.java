@@ -49,10 +49,10 @@ import at.vcity.androidim.interfaces.IUpdateData;
 import at.vcity.androidim.tools.FriendController;
 import at.vcity.androidim.tools.LocalStorageHandler;
 import at.vcity.androidim.tools.MessageController;
-import at.vcity.androidim.tools.XMLHandler;
 import at.vcity.androidim.types.FriendInfo;
 import at.vcity.androidim.types.MessageInfo;
 
+import at.vcity.androidim.tools.JSONHandler;
 
 /**
  * This is an example of implementing an application service that runs locally
@@ -133,7 +133,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 				}
 			}
 		};		
-		thread.start();
+		//thread.start();
     
     }
 
@@ -409,7 +409,9 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	} 
 	
 	private void parseFriendInfo(String xml)
-	{			
+	{
+		JSONHandler.HandleJSON(IMService.this,xml);
+		/*
 		try 
 		{
 			SAXParser sp = SAXParserFactory.newInstance().newSAXParser();
@@ -423,10 +425,12 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		} 
 		catch (IOException e) {			
 			e.printStackTrace();
-		}	
+		}	*/
 	}
+
 	private void parseMessageInfo(String xml)
-	{			
+	{	JSONHandler.HandleJSON(IMService.this,xml);
+		/*
 		try 
 		{
 			SAXParser sp = SAXParserFactory.newInstance().newSAXParser();
@@ -440,7 +444,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		} 
 		catch (IOException e) {			
 			e.printStackTrace();
-		}	
+		}	*/
 	}
 
 	public void updateData(MessageInfo[] messages,FriendInfo[] friends,

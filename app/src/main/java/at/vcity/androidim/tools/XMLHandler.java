@@ -55,8 +55,7 @@ public class XMLHandler extends DefaultHandler
 				friends[i] = mOnlineFriends.get(i);
 			}
 			
-						
-			int offlineFriendCount = mFriends.size();			
+			int offlineFriendCount = mFriends.size();
 			for (int i = 0; i < offlineFriendCount; i++) 
 			{
 				friends[i + onlineFriendCount] = mFriends.get(i);
