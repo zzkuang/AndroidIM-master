@@ -116,8 +116,10 @@ public class XMLHandler extends DefaultHandler
 				MessageInfo message = new MessageInfo();
 				message.userid = attributes.getValue(MessageInfo.USERID);
 				message.sendt = attributes.getValue(MessageInfo.SENDT);
-				message.messagetext = attributes.getValue(MessageInfo.MESSAGETEXT);
-				Log.i("MessageLOG", message.userid + message.sendt + message.messagetext);
+				message.content = attributes.getValue(MessageInfo.CONTENT);
+				message.type = attributes.getType(MessageInfo.TYPE);
+
+				Log.i("MessageLOG", message.userid + message.sendt + message.content);
 				mUnreadMessages.add(message);
 			}
 			super.startElement(uri, localName, name, attributes);

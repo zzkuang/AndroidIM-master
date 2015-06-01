@@ -40,6 +40,7 @@ public class Messaging extends Activity {
 	private EditText messageText;
 	private EditText messageHistoryText;
 	private Button sendMessageButton;
+	private Button sendImageButton;
 	private IAppManager imService;
 	private FriendInfo friend = new FriendInfo();
 	private LocalStorageHandler localstoragehandler; 
@@ -74,24 +75,19 @@ public class Messaging extends Activity {
 		messageText.requestFocus();			
 		
 		sendMessageButton = (Button) findViewById(R.id.sendMessageButton);
-		
+		sendImageButton = (Button ) findViewById(R.id.sendImageButton);
+
+
 		Bundle extras = this.getIntent().getExtras();
 		
 		
 		friend.userName = extras.getString(FriendInfo.USERNAME);
 		friend.ip = extras.getString(FriendInfo.IP);
 		friend.port = extras.getString(FriendInfo.PORT);
-		String msg = extras.getString(MessageInfo.MESSAGETEXT);
-		 
-		
-		
+		String msg = extras.getString(MessageInfo.CONTENT);
+
 		setTitle("Messaging with " + friend.userName);
-	
-		
-	//	EditText friendUserName = (EditText) findViewById(R.id.friendUserName);
-	//	friendUserName.setText(friend.userName);
-		
-		
+
 		localstoragehandler = new LocalStorageHandler(this);
 		dbCursor = localstoragehandler.get(friend.userName, IMService.USERNAME );
 		
@@ -113,7 +109,16 @@ public class Messaging extends Activity {
 			this.appendToMessageHistory(friend.userName , msg);
 			((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel((friend.userName+msg).hashCode());
 		}
-		
+
+		sendImageButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				Intent i = new Intent(Messaging.this, Gallery.class);
+				//Messaging.this.startActivityForResult(i, 6);
+				startActivity(i);
+			}
+		});
+
 		sendMessageButton.setOnClickListener(new OnClickListener(){
 			CharSequence message;
 			Handler handler = new Handler();
@@ -233,7 +238,7 @@ public class Messaging extends Activity {
 		{		
 			Bundle extra = intent.getExtras();
 			String username = extra.getString(MessageInfo.USERID);			
-			String message = extra.getString(MessageInfo.MESSAGETEXT);
+			String message = extra.getString(MessageInfo.CONTENT);
 			
 			if (username != null && message != null)
 			{

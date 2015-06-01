@@ -7,6 +7,8 @@
         android:minSdkVersion="8"
         android:targetSdkVersion="17" />
 
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     
@@ -39,7 +41,11 @@
 				</category>
 			</intent-filter>
 		</activity>
-		
+		<activity
+			android:name=".Gallery"
+			android:label="Gallery"
+			android:screenOrientation="portrait" >
+		</activity>
 		
 	<activity android:name=".SignUp"><intent-filter><action android:name="android.intent.action.MAIN"></action>
 <category android:name="android.intent.category.NORMAL"></category>

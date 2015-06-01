@@ -49,7 +49,7 @@ public class LocalStorageHandler extends SQLiteOpenHelper {
 		Log.w(TAG, "Upgrade der DB von V: "+ oldVersion + " zu V:" + newVersion + "; Alle Daten werden gelöscht!");
 		db.execSQL(TABLE_MESSAGE_DROP);
 		onCreate(db);
-		
+
 	}
 	
 	public void insert(String sender, String receiver, String message){

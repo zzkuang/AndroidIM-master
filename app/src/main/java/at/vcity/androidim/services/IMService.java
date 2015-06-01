@@ -16,19 +16,11 @@
 
 package at.vcity.androidim.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.xml.sax.SAXException;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -179,7 +171,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 
         Intent i = new Intent(this, Messaging.class);
         i.putExtra(FriendInfo.USERNAME, username);
-        i.putExtra(MessageInfo.MESSAGETEXT, msg);	
+        i.putExtra(MessageInfo.CONTENT, msg);
         
         // The PendingIntent to launch our activity if the user selects this notification
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
@@ -310,7 +302,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 			Intent i = new Intent(TAKE_MESSAGE);
 		
 			i.putExtra(MessageInfo.USERID, msg.userid);			
-			i.putExtra(MessageInfo.MESSAGETEXT, msg.messagetext);			
+			i.putExtra(MessageInfo.CONTENT, msg.content);
 			sendBroadcast(i);
 			String activeFriend = FriendController.getActiveFriend();
 			if (activeFriend == null || activeFriend.equals(username) == false) 
@@ -457,8 +449,8 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		
 		int i = 0;
 		while (i < messages.length){
-			messageReceived(messages[i].userid,messages[i].messagetext);
-			//appManager.messageReceived(messages[i].userid,messages[i].messagetext);
+			messageReceived(messages[i].userid,messages[i].content);
+			//appManager.messageReceived(messages[i].userid,messages[i].content);
 			i++;
 		}
 		

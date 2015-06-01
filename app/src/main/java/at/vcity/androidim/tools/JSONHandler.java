@@ -76,8 +76,9 @@ public  class JSONHandler
                 JSONObject messagejson=messagearray.getJSONObject(i);
                 message.userid = messagejson.getString(MessageInfo.USERID);
                 message.sendt = messagejson.getString(MessageInfo.SENDT);
-                message.messagetext = messagejson.getString(MessageInfo.MESSAGETEXT);
-                Log.i("MessageLOG", message.userid + message.sendt + message.messagetext);
+                message.content = messagejson.getString(MessageInfo.CONTENT);
+                message.type=messagejson.getString(MessageInfo.TYPE);
+                Log.i("MessageLOG", message.userid + message.sendt + message.content);
                 mUnreadMessages.add(message);
             }
             FriendInfo[] friends = new FriendInfo[mFriends.size() + mOnlineFriends.size()];
