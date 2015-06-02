@@ -1,7 +1,14 @@
 package at.vcity.androidim;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.UUID;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -15,6 +22,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -32,10 +44,16 @@ import at.vcity.androidim.tools.LocalStorageHandler;
 import at.vcity.androidim.types.FriendInfo;
 import at.vcity.androidim.types.MessageInfo;
 
+/*
+import com.koushikdutta.async.future.FutureCallback;
+import com.koushikdutta.ion.Ion;
+import com.koushikdutta.ion.Response;
+*/
 
 public class Messaging extends Activity {
 
 	private static final int MESSAGE_CANNOT_BE_SENT = 0;
+    private static final int GALLERY_ACTIVITY=1;
 	public String username;
 	private EditText messageText;
 	private EditText messageHistoryText;
@@ -47,7 +65,8 @@ public class Messaging extends Activity {
 	private Cursor dbCursor;
 	
 	private ServiceConnection mConnection = new ServiceConnection() {
-      
+
+
 		
 		
 		public void onServiceConnected(ComponentName className, IBinder service) {          
@@ -85,6 +104,7 @@ public class Messaging extends Activity {
 		friend.ip = extras.getString(FriendInfo.IP);
 		friend.port = extras.getString(FriendInfo.PORT);
 		String msg = extras.getString(MessageInfo.CONTENT);
+        String msgtype=extras.getString(MessageInfo.TYPE);
 
 		setTitle("Messaging with " + friend.userName);
 
@@ -98,7 +118,7 @@ public class Messaging extends Activity {
 		    {
 		        noOfScorer++;
 
-				this.appendToMessageHistory(dbCursor.getString(2) , dbCursor.getString(3));
+				this.appendToMessageHistory(dbCursor.getString(2) , dbCursor.getString(3), dbCursor.getString(4));
 		        dbCursor.moveToNext();
 		    }
 		}
@@ -106,7 +126,7 @@ public class Messaging extends Activity {
 		
 		if (msg != null) 
 		{
-			this.appendToMessageHistory(friend.userName , msg);
+			this.appendToMessageHistory(friend.userName, msg,msgtype);
 			((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel((friend.userName+msg).hashCode());
 		}
 
@@ -114,8 +134,7 @@ public class Messaging extends Activity {
 			@Override
 			public void onClick(View view) {
 				Intent i = new Intent(Messaging.this, Gallery.class);
-				//Messaging.this.startActivityForResult(i, 6);
-				startActivity(i);
+				Messaging.this.startActivityForResult(i, GALLERY_ACTIVITY);
 			}
 		});
 
@@ -126,9 +145,9 @@ public class Messaging extends Activity {
 				message = messageText.getText();
 				if (message.length()>0) 
 				{		
-					appendToMessageHistory(imService.getUsername(), message.toString());
+					appendToMessageHistory(imService.getUsername(), message.toString(), MessageInfo.MessageType.TEXT);
 					
-					localstoragehandler.insert(imService.getUsername(), friend.userName, message.toString());
+					localstoragehandler.insert(imService.getUsername(), friend.userName, message.toString(),MessageInfo.MessageType.TEXT);
 								
 					messageText.setText("");
 					Thread thread = new Thread(){					
@@ -229,8 +248,122 @@ public class Messaging extends Activity {
 		
 		
 	}
-	
-	
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode==GALLERY_ACTIVITY && resultCode== RESULT_OK)
+        {
+            ArrayList<String> selectedImagePaths = data.getExtras().getStringArrayList("ImagePaths");
+            for(String s:selectedImagePaths ){
+
+                Bitmap scaled = compressAndMoveImage(s);
+
+                ByteArrayOutputStream imageByteStream = new ByteArrayOutputStream();
+                scaled.compress(Bitmap.CompressFormat.PNG,100,imageByteStream);
+
+                byte[] imageByteArray=imageByteStream.toByteArray();
+                MessageDigest md = getMessageDigest();
+                byte[] hash=md.digest(imageByteArray);
+                StringBuffer sb = new StringBuffer();
+                for (int i = 0; i < hash.length; i++) {
+                    sb.append(Integer.toString((hash[i] & 0xff) + 0x100, 16).substring(1));
+                }
+                String hashedname=sb.toString();
+                try {
+                    File ofile=new File(localstoragehandler.fileCacheFolder, hashedname+".jpg");
+                    FileOutputStream fos = new FileOutputStream(ofile);
+                    scaled.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    fos.close();
+                } catch (Exception e) {
+                }
+
+                scaled.recycle();
+                System.gc();
+            }
+
+            /*
+            for(int i=0;i<selectedimgpaths.size();i++)
+            {
+                //CreateThumbnailsAndPictures task=new CreateThumbnailsAndPictures(thumbnailAdapter);
+                //task.execute(selectedimgpaths.get(i));
+                compressAndMoveImage()
+            }*/
+        }
+    }
+    // for command hash computation
+    private MessageDigest messageDigest = null;
+    private MessageDigest getMessageDigest() {
+        if (messageDigest != null)
+            return messageDigest;
+        try {
+            messageDigest = MessageDigest.getInstance("MD5");
+            return messageDigest;
+        } catch (Exception e) {
+            // should throw exception
+            return null;
+        }
+    }
+
+    private Bitmap compressAndMoveImage(String imagePath){
+        BitmapFactory.Options opt = new BitmapFactory.Options();
+        Bitmap original = BitmapFactory.decodeFile(imagePath, opt);
+        int originalwidth=original.getWidth();
+        int originalheight=original.getHeight();
+
+        float scalefactor=originalwidth>1024? 1024.0f/originalwidth:1;
+
+        int targetdimx=(int)(originalwidth*scalefactor);
+        int targetdimy=(int)(originalheight*scalefactor);
+
+
+        Bitmap scaled = Bitmap.createBitmap(original, 0, 0, targetdimx, targetdimy,null, true);
+
+        original.recycle();
+        System.gc();
+
+        return scaled;
+    }
+/*
+    private class CreateThumbnailsAndPictures extends AsyncTask<String, Void, UUID> {
+        private String filePath;
+        public CreateThumbnailsAndPictures(){}
+        @Override
+        protected UUID doInBackground(String... params) {
+            // String path = mContext.getExternalFilesDir(null).getPath() +
+            // "/DemoFile.jpg";
+            filePath = params[0];
+            Bitmap original = null;
+            try {
+                BitmapFactory.Options opt = new BitmapFactory.Options();
+                original = BitmapFactory.decodeFile(filePath, opt);
+                int originalwidth=original.getWidth();
+                int originalheight=original.getHeight();
+
+                float scalefactor=originalwidth>1024? 1024.0f/originalwidth:1;
+
+                int targetdimx=(int)(originalwidth*scalefactor);
+                int targetdimy=(int)(originalheight*scalefactor);
+
+
+                Bitmap scaledimg = Bitmap.createBitmap(original, 0, 0, targetdimx, targetdimy,null, true);
+
+                original.recycle();
+                System.gc();
+
+                transformed.recycle();
+                System.gc();
+
+                //PropertyPicture.AddPropertyThumbnail(fileid, tn);
+                //return fileid;
+
+
+            } catch (Exception e) {
+            }
+
+            return null;
+        }
+    }
+	*/
 	public class  MessageReceiver extends BroadcastReceiver {
 
 		@Override
@@ -238,34 +371,43 @@ public class Messaging extends Activity {
 		{		
 			Bundle extra = intent.getExtras();
 			String username = extra.getString(MessageInfo.USERID);			
-			String message = extra.getString(MessageInfo.CONTENT);
-			
-			if (username != null && message != null)
+			String content = extra.getString(MessageInfo.CONTENT);
+			String type = extra.getString(MessageInfo.TYPE);
+			if (username != null && content != null)
 			{
 				if (friend.userName.equals(username)) {
-					appendToMessageHistory(username, message);
-					localstoragehandler.insert(username,imService.getUsername(), message);
-					
+					appendToMessageHistory(username, content,type);
+					localstoragehandler.insert(username,imService.getUsername(), content,type);
 				}
 				else {
-					if (message.length() > 15) {
-						message = message.substring(0, 15);
+					if (content.length() > 15) {
+                        content = content.substring(0, 15);
 					}
-					Toast.makeText(Messaging.this,  username + " says '"+
-													message + "'",
-													Toast.LENGTH_SHORT).show();		
-				}
+                    if(type.equals(MessageInfo.MessageType.TEXT)){
+                        Toast.makeText(Messaging.this,  username + " says '"+
+                                        content + "'",
+                                Toast.LENGTH_SHORT).show();
+                    }else if(type.equals(MessageInfo.MessageType.IMAGE)){
+                        Toast.makeText(Messaging.this,  username + " sent you an image.",Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        Toast.makeText(Messaging.this,  username + " sent you an voice clip.",Toast.LENGTH_SHORT).show();
+                    }
+                }
 			}			
 		}
 		
 	};
 	private MessageReceiver messageReceiver = new MessageReceiver();
 	
-	public  void appendToMessageHistory(String username, String message) {
-		if (username != null && message != null) {
-			messageHistoryText.append(username + ":\n");								
-			messageHistoryText.append(message + "\n");
-		}
+	public  void appendToMessageHistory(String username, String message, String type) {
+        if(type.equals(MessageInfo.MessageType.TEXT))
+        {
+            if (username != null && message != null) {
+			    messageHistoryText.append(username + ":\n");
+			    messageHistoryText.append(message + "\n");
+		    }
+        }
 	}
 	
 	

@@ -16,6 +16,8 @@
 
 package at.vcity.androidim.services;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Random;
@@ -153,7 +155,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	 * Show a notification while this service is running.
 	 * @param msg 
 	 **/
-    private void showNotification(String username, String msg) 
+    private void showNotification(String username, String msg, String msgtype)
 	{       
         // Set the icon, scrolling text and TIMESTAMP
     	String title = "AndroidIM: You got a new Message! (" + username + ")";
@@ -180,8 +182,15 @@ public class IMService extends Service implements IAppManager, IUpdateData {
         // Set the info for the views that show in the notification panel.
         // msg.length()>15 ? MSG : msg.substring(0, 15);
         mBuilder.setContentIntent(contentIntent); 
-        
-        mBuilder.setContentText("New message from " + username + ": " + msg);
+
+        if(msgtype.equals(MessageInfo.MessageType.TEXT))
+            mBuilder.setContentText("New message from " + username + ": " + msg);
+        else if(msgtype.equals(MessageInfo.MessageType.IMAGE)){
+            mBuilder.setContentText("New image from " + username );
+        }
+        else {
+            mBuilder.setContentText("New voice clip from " + username );
+        }
         
         //TODO: it can be improved, for instance message coming from same user may be concatenated 
         // next version
@@ -208,6 +217,24 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		Log.i("PARAMS", params);
 		return socketOperator.sendHttpRequest(params);		
 	}
+
+    public String sendData(String filepath){
+        File sourceFile=new File(filepath);
+        int maxBufferSize=5*1024*1024;
+        int bytesRead,bytesAvailable,bufferSize;
+        byte[] buffer;
+        try{
+            FileInputStream fileInputStream = new FileInputStream(sourceFile);
+            bytesAvailable=fileInputStream.available();
+            bufferSize=Math.min(bytesAvailable,maxBufferSize);
+            buffer=new byte[bufferSize];
+
+            bytesRead=fileInputStream.read(buffer,0,bufferSize);
+        }
+         catch (Exception e){
+        }
+        return "";
+    }
 
 	
 	private String getFriendList() throws UnsupportedEncodingException 	{		
@@ -303,12 +330,13 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		
 			i.putExtra(MessageInfo.USERID, msg.userid);			
 			i.putExtra(MessageInfo.CONTENT, msg.content);
+            i.putExtra(MessageInfo.TYPE,msg.type);
 			sendBroadcast(i);
 			String activeFriend = FriendController.getActiveFriend();
 			if (activeFriend == null || activeFriend.equals(username) == false) 
 			{
-				localstoragehandler.insert(username,this.getUsername(), message.toString());
-				showNotification(username, message);
+				localstoragehandler.insert(username,this.getUsername(), message.toString(),msg.type);
+				showNotification(username, message,msg.type);
 			}
 			
 			Log.i("TAKE_MESSAGE broadcast sent by im service", "");

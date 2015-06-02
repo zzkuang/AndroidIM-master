@@ -21,7 +21,8 @@ import at.vcity.androidim.interfaces.ISocketOperator;
 public class SocketOperator implements ISocketOperator
 {
 	//private static final String AUTHENTICATION_SERVER_ADDRESS = "http://192.168.0.54/android-im/"; //TODO change to your WebAPI Address
-	private static final String AUTHENTICATION_SERVER_ADDRESS = "http://192.168.33.64:9986"; //TODO change to your WebAPI Address
+	// private static final String AUTHENTICATION_SERVER_ADDRESS = "http://192.168.33.64:9986"; //TODO change to your WebAPI Address
+    private static final String AUTHENTICATION_SERVER_ADDRESS = "http://10.88.26.103:9986"; //TODO change to your WebAPI Address
 	
 	private int listeningPort = 0;
 	
@@ -113,10 +114,12 @@ public class SocketOperator implements ISocketOperator
 		}
 		
 		return result;
-		
-	
 	}
 
+/*
+    public String sendHttpImages(){
+    }
+*/
 	public int startListening(int portNo) 
 	{
 		listening = true;

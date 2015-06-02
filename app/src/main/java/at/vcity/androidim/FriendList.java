@@ -174,9 +174,6 @@ public class FriendList extends ListActivity
         setContentView(R.layout.list_screen);
         
 		friendAdapter = new FriendListAdapter(this);
-		
-		
-
 
 	}
 	public void updateData(FriendInfo[] friends, FriendInfo[] unApprovedFriends)

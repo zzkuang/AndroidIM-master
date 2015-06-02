@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.io.File;
+
 public class LocalStorageHandler extends SQLiteOpenHelper {
 
 	private static final String TAG = LocalStorageHandler.class.getSimpleName();
@@ -19,40 +21,48 @@ public class LocalStorageHandler extends SQLiteOpenHelper {
 	private static final String TABLE_NAME_MESSAGES = "androidim_messages";
 	public static final String MESSAGE_RECEIVER = "receiver";
 	public static final String MESSAGE_SENDER = "sender";
-	private static final String MESSAGE_MESSAGE = "message";
-	
-	
+    public static final String MESSAGE_TYPE = "type";
+	private static final String MESSAGE_CONTENT = "message";
+
+    public static String fileCacheFolder=null;
+
 	private static final String TABLE_MESSAGE_CREATE
 	= "CREATE TABLE " + TABLE_NAME_MESSAGES
 	+ " (" + _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
 	+ MESSAGE_RECEIVER + " VARCHAR(25), "
 	+ MESSAGE_SENDER + " VARCHAR(25), "
-	+MESSAGE_MESSAGE + " VARCHAR(255));";
+	+ MESSAGE_CONTENT + " VARCHAR(255),"
+    + MESSAGE_TYPE + " VARCHAR(10))";
 	
 	private static final String TABLE_MESSAGE_DROP = 
 			"DROP TABLE IF EXISTS "
 			+ TABLE_NAME_MESSAGES;
-	
+
+    Context mContext=null;
 	
 	public LocalStorageHandler(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
-	}
+        mContext=context;
+    }
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		db.execSQL(TABLE_MESSAGE_CREATE);
-		
+
+
+
+
 	}
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		Log.w(TAG, "Upgrade der DB von V: "+ oldVersion + " zu V:" + newVersion + "; Alle Daten werden gelöscht!");
+		Log.w(TAG, "Upgrade der DB von V: "+ oldVersion + " zu V:" + newVersion + "; Alle Daten werden gelï¿½scht!");
 		db.execSQL(TABLE_MESSAGE_DROP);
 		onCreate(db);
 
 	}
 	
-	public void insert(String sender, String receiver, String message){
+	public void insert(String sender, String receiver, String message,String type){
 		long rowId = -1;
 		try{
 			
@@ -60,7 +70,9 @@ public class LocalStorageHandler extends SQLiteOpenHelper {
 			ContentValues values = new ContentValues();
 			values.put(MESSAGE_RECEIVER, receiver);
 			values.put(MESSAGE_SENDER, sender);
-			values.put(MESSAGE_MESSAGE, message);
+			values.put(MESSAGE_CONTENT, message);
+            values.put(MESSAGE_TYPE,type);
+
 			rowId = db.insert(TABLE_NAME_MESSAGES, null, values);
 			
 		} catch (SQLiteException e){
@@ -72,8 +84,13 @@ public class LocalStorageHandler extends SQLiteOpenHelper {
 	}
 	
 	public Cursor get(String sender, String receiver) {
-					
-			SQLiteDatabase db = getWritableDatabase();
+        String folder=mContext.getExternalFilesDir(null).getPath();
+        fileCacheFolder=folder+"/filecache";
+        File cacheFolder = new File(fileCacheFolder);
+        if (!cacheFolder.exists())
+            cacheFolder.mkdir();
+
+        SQLiteDatabase db = getWritableDatabase();
 			String SELECT_QUERY = "SELECT * FROM " + TABLE_NAME_MESSAGES + " WHERE " + MESSAGE_SENDER + " LIKE '" + sender + "' AND " + MESSAGE_RECEIVER + " LIKE '" + receiver + "' OR " + MESSAGE_SENDER + " LIKE '" + receiver + "' AND " + MESSAGE_RECEIVER + " LIKE '" + sender + "' ORDER BY " + _ID + " ASC";
 			return db.rawQuery(SELECT_QUERY,null);
 			
