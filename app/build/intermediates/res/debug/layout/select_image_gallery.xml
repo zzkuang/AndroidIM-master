@@ -1,0 +1,53 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="0dp"
+    android:paddingLeft="0dp"
+    android:paddingRight="0dp"
+    android:paddingTop="0dp"
+    tools:context=".Gallery" >
+
+	<GridView
+	    android:id="@+id/gallery_grid"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+	    android:numColumns="3"
+	    android:verticalSpacing="1dp"
+	    android:horizontalSpacing="1dp"
+	    android:stretchMode="columnWidth"
+	    android:gravity="center"
+	    android:layout_marginBottom="50dp"
+	/>
+
+	<Button
+	    android:enabled="false"
+	    android:id="@+id/okaybutton"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentBottom="true"
+	    android:layout_alignParentRight="true"
+	    android:text="OK" />
+
+	<Button
+	    android:id="@+id/clearAll"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentBottom="true"
+	    android:layout_alignParentLeft="true"
+	    android:text="Clear all" />
+
+	<TextView
+	    android:visibility="invisible"
+	    android:id="@+id/num_selected"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignBaseline="@+id/clearAll"
+	    android:layout_alignBottom="@+id/clearAll"
+	    android:layout_toRightOf="@+id/clearAll"
+	    android:layout_marginLeft="10dp"
+	    android:text=""
+	    android:textAppearance="?android:attr/textAppearanceMedium" />
+	
+</RelativeLayout>
+<!-- From: file:/C:/Users/zzkuang/Documents/Android/AndroidIM-master1/app/src/main/res/layout/select_image_gallery.xml -->
