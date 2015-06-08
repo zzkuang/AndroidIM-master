@@ -1,12 +1,16 @@
 package at.vcity.androidim.interfaces;
 
+import org.apache.http.util.ByteArrayBuffer;
+
 import java.io.UnsupportedEncodingException;
 
 
 public interface IAppManager {
 	
 	public String getUsername();
-	public String sendMessage(String username,String tousername, String message) throws UnsupportedEncodingException;
+	public String sendMessage(String username,String tousername, String message, String type) throws UnsupportedEncodingException;
+    public String sendData(String filename, String type, byte[] data) throws UnsupportedEncodingException;
+    public ByteArrayBuffer getData(String filename,String type);
 	public String authenticateUser(String usernameText, String passwordText) throws UnsupportedEncodingException; 
 	public void messageReceived(String username, String message);
 //	public void setUserKey(String value);

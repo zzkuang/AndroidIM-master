@@ -120,6 +120,7 @@ public class Login extends Activity {
 								
 								e.printStackTrace();
 							}
+                            //result="YEAH";
 							if (result == null || result.equals(AUTHENTICATION_FAILED)) 
 							{
 								/*

@@ -3,13 +3,16 @@ package at.vcity.androidim;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -24,21 +27,31 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import org.apache.http.util.ByteArrayBuffer;
+
 import at.vcity.androidim.interfaces.IAppManager;
 import at.vcity.androidim.services.IMService;
+import at.vcity.androidim.tools.BitmapLoaderTask;
 import at.vcity.androidim.tools.FriendController;
 import at.vcity.androidim.tools.LocalStorageHandler;
 import at.vcity.androidim.types.FriendInfo;
@@ -60,6 +73,8 @@ public class Messaging extends Activity {
 	private Button sendMessageButton;
 	private Button sendImageButton;
 	private IAppManager imService;
+    private ScrollView messageHistoryScroll;
+    private LinearLayout messageHistoryLayout;
 	private FriendInfo friend = new FriendInfo();
 	private LocalStorageHandler localstoragehandler; 
 	private Cursor dbCursor;
@@ -83,12 +98,26 @@ public class Messaging extends Activity {
 	protected void onCreate(Bundle savedInstanceState) 
 	{
 		// TODO Auto-generated method stub
-		super.onCreate(savedInstanceState);	   
-		
-		setContentView(R.layout.messaging_screen); //messaging_screen);
+		super.onCreate(savedInstanceState);
+
+
+        bindService(new Intent(Messaging.this, IMService.class), mConnection , Context.BIND_AUTO_CREATE);
+
+        IntentFilter i = new IntentFilter();
+        i.addAction(IMService.TAKE_MESSAGE);
+
+        registerReceiver(messageReceiver, i);
+
+        FriendController.setActiveFriend(friend.userName);
+
+
+
+        setContentView(R.layout.messaging_screen); //messaging_screen);
 				
-		messageHistoryText = (EditText) findViewById(R.id.messageHistory);
-		
+		//messageHistoryText = (EditText) findViewById(R.id.messageHistory);
+        messageHistoryScroll=(ScrollView) findViewById(R.id.messageScroll);
+        messageHistoryLayout=(LinearLayout)findViewById(R.id.messageHistory2);
+
 		messageText = (EditText) findViewById(R.id.message);
 		
 		messageText.requestFocus();			
@@ -150,32 +179,14 @@ public class Messaging extends Activity {
 					localstoragehandler.insert(imService.getUsername(), friend.userName, message.toString(),MessageInfo.MessageType.TEXT);
 								
 					messageText.setText("");
-					Thread thread = new Thread(){					
+                    SendMessageTask sendMessageTask=new SendMessageTask(message.toString(),MessageInfo.MessageType.TEXT);
+                    sendMessageTask.execute();
+					/*Thread thread = new Thread(){
 						public void run() {
-							try {
-								if (imService.sendMessage(imService.getUsername(), friend.userName, message.toString()) == null)
-								{
-									
-									handler.post(new Runnable(){	
 
-										public void run() {
-											
-									        Toast.makeText(getApplicationContext(),R.string.message_cannot_be_sent, Toast.LENGTH_LONG).show();
-
-											
-											//showDialog(MESSAGE_CANNOT_BE_SENT);										
-										}
-										
-									});
-								}
-							} catch (UnsupportedEncodingException e) {
-								Toast.makeText(getApplicationContext(),R.string.message_cannot_be_sent, Toast.LENGTH_LONG).show();
-
-								e.printStackTrace();
-							}
-						}						
+						}
 					};
-					thread.start();
+					thread.start();*/
 										
 				}
 				
@@ -195,6 +206,43 @@ public class Messaging extends Activity {
 		});
 				
 	}
+
+    private class SendMessageTask extends AsyncTask<Void, Void, String>{
+
+        String message;
+        String type;
+        public SendMessageTask(String msg, String t){
+            message=msg;
+            type=t;
+        }
+
+        @Override
+        protected String doInBackground(Void... n) {
+
+            try {
+                return imService.sendMessage(imService.getUsername(), friend.userName, message, type);
+            } catch (UnsupportedEncodingException e) {
+                Toast.makeText(getApplicationContext(),R.string.message_cannot_be_sent, Toast.LENGTH_LONG).show();
+
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            //super.onPostExecute(s);
+            Handler handler = new Handler();
+            if(s==null){
+                handler.post(new Runnable(){
+                    public void run() {
+                        Toast.makeText(getApplicationContext(),R.string.message_cannot_be_sent, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        }
+    }
+
 
 	@Override
 	protected Dialog onCreateDialog(int id) {
@@ -268,28 +316,66 @@ public class Messaging extends Activity {
                 for (int i = 0; i < hash.length; i++) {
                     sb.append(Integer.toString((hash[i] & 0xff) + 0x100, 16).substring(1));
                 }
-                String hashedname=sb.toString();
+
+                String hashedname=sb.toString()+".jpg";
                 try {
-                    File ofile=new File(localstoragehandler.fileCacheFolder, hashedname+".jpg");
-                    FileOutputStream fos = new FileOutputStream(ofile);
+                    File file=new File(localstoragehandler.fileCacheFolder, hashedname);
+                    FileOutputStream fos = new FileOutputStream(file);
                     scaled.compress(Bitmap.CompressFormat.JPEG, 100, fos);
                     fos.close();
-                } catch (Exception e) {
-                }
+                } catch (Exception e) {}
+
+                appendToMessageHistory(imService.getUsername(), hashedname, MessageInfo.MessageType.IMAGE);
+                localstoragehandler.insert(imService.getUsername(), friend.userName, hashedname,MessageInfo.MessageType.IMAGE);
 
                 scaled.recycle();
                 System.gc();
-            }
 
-            /*
-            for(int i=0;i<selectedimgpaths.size();i++)
-            {
-                //CreateThumbnailsAndPictures task=new CreateThumbnailsAndPictures(thumbnailAdapter);
-                //task.execute(selectedimgpaths.get(i));
-                compressAndMoveImage()
-            }*/
+
+                UploadDataTask uploadDataTask=new UploadDataTask(hashedname, MessageInfo.MessageType.IMAGE);
+                uploadDataTask.execute(imageByteArray);
+            }
         }
     }
+
+    class UploadDataTask extends AsyncTask<byte[],Void,String>
+    {
+        String hashedname;
+        String type;
+        public UploadDataTask(String hashname, String t)
+        {
+            hashedname=hashname;
+            type=t;
+        }
+
+        @Override
+        protected String doInBackground(byte[]... dataByteArray){
+            String result="";
+            try{
+                result = imService.sendData(hashedname, type, dataByteArray[0]);
+            }catch (UnsupportedEncodingException e) {
+
+            }
+            if(result.equals("OK"))
+                return result;
+            else
+                return "Failed";
+        }
+
+        @Override
+        protected void onPostExecute(String result)
+        {
+            if(result.equals("OK")){
+                SendMessageTask sendMessageTask=new SendMessageTask(hashedname.toString(),MessageInfo.MessageType.IMAGE);
+                sendMessageTask.execute();
+            }else{
+                Toast.makeText(getApplicationContext(),R.string.message_cannot_be_sent, Toast.LENGTH_LONG).show();
+            }
+
+        }
+    }
+
+
     // for command hash computation
     private MessageDigest messageDigest = null;
     private MessageDigest getMessageDigest() {
@@ -304,7 +390,7 @@ public class Messaging extends Activity {
         }
     }
 
-    private Bitmap compressAndMoveImage(String imagePath){
+    private Bitmap  compressAndMoveImage(String imagePath){
         BitmapFactory.Options opt = new BitmapFactory.Options();
         Bitmap original = BitmapFactory.decodeFile(imagePath, opt);
         int originalwidth=original.getWidth();
@@ -314,56 +400,12 @@ public class Messaging extends Activity {
 
         int targetdimx=(int)(originalwidth*scalefactor);
         int targetdimy=(int)(originalheight*scalefactor);
-
-
-        Bitmap scaled = Bitmap.createBitmap(original, 0, 0, targetdimx, targetdimy,null, true);
-
+        Bitmap scaled = Bitmap.createScaledBitmap(original, targetdimx, targetdimy, false);
         original.recycle();
         System.gc();
-
         return scaled;
+
     }
-/*
-    private class CreateThumbnailsAndPictures extends AsyncTask<String, Void, UUID> {
-        private String filePath;
-        public CreateThumbnailsAndPictures(){}
-        @Override
-        protected UUID doInBackground(String... params) {
-            // String path = mContext.getExternalFilesDir(null).getPath() +
-            // "/DemoFile.jpg";
-            filePath = params[0];
-            Bitmap original = null;
-            try {
-                BitmapFactory.Options opt = new BitmapFactory.Options();
-                original = BitmapFactory.decodeFile(filePath, opt);
-                int originalwidth=original.getWidth();
-                int originalheight=original.getHeight();
-
-                float scalefactor=originalwidth>1024? 1024.0f/originalwidth:1;
-
-                int targetdimx=(int)(originalwidth*scalefactor);
-                int targetdimy=(int)(originalheight*scalefactor);
-
-
-                Bitmap scaledimg = Bitmap.createBitmap(original, 0, 0, targetdimx, targetdimy,null, true);
-
-                original.recycle();
-                System.gc();
-
-                transformed.recycle();
-                System.gc();
-
-                //PropertyPicture.AddPropertyThumbnail(fileid, tn);
-                //return fileid;
-
-
-            } catch (Exception e) {
-            }
-
-            return null;
-        }
-    }
-	*/
 	public class  MessageReceiver extends BroadcastReceiver {
 
 		@Override
@@ -401,14 +443,103 @@ public class Messaging extends Activity {
 	private MessageReceiver messageReceiver = new MessageReceiver();
 	
 	public  void appendToMessageHistory(String username, String message, String type) {
-        if(type.equals(MessageInfo.MessageType.TEXT))
-        {
-            if (username != null && message != null) {
-			    messageHistoryText.append(username + ":\n");
-			    messageHistoryText.append(message + "\n");
-		    }
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = 5;
+        if (username.equals(IMService.USERNAME)) {
+            params.gravity = Gravity.RIGHT;
+            params.rightMargin = 10;
+        } else {
+            params.gravity = Gravity.LEFT;
+            params.leftMargin = 10;
         }
-	}
+        if (type.equals(MessageInfo.MessageType.TEXT)) {
+            if (username != null && message != null) {
+//			    messageHistoryText.append(username + ":\n");
+//			    messageHistoryText.append(message + "\n");
+
+                TextView textView = new TextView(this);
+                textView.setText(message);
+
+                if (username.equals(IMService.USERNAME)) {
+                    textView.setGravity(Gravity.RIGHT);
+                    textView.setBackgroundColor(Color.parseColor("#00FF00"));
+                } else {
+                    textView.setGravity(Gravity.LEFT);
+                    textView.setBackgroundColor(Color.parseColor("#B0B0B0"));
+                }
+                textView.setLayoutParams(params);
+                messageHistoryLayout.addView(textView);
+            }
+        } else {
+            //String[] strings = {message, type};
+            //ShowDataObjectTask showDataObjectTask = new ShowDataObjectTask(this,message,type,params);
+            //showDataObjectTask.execute();
+        }
+    }
+
+    class ShowDataObjectTask extends AsyncTask<Void,Void,String>{
+        Context context;
+        String filename;
+        String type;
+        LinearLayout.LayoutParams params;
+        boolean fileExists=false;
+
+        public ShowDataObjectTask(Context c,String fn,String t, LinearLayout.LayoutParams ll){
+            context=c;
+            params=ll;
+            filename=fn;
+            type=t;
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            String imagePath=localstoragehandler.fileCacheFolder+"/"+filename;
+            File file=new File(imagePath);
+            fileExists=file.exists();
+            if(!fileExists){
+                ByteArrayBuffer buffer=imService.getData(filename, type);
+                if(buffer!=null){
+                try{
+                    FileOutputStream fos = new FileOutputStream( localstoragehandler.fileCacheFolder+"/"+filename);
+                    try{
+                        fos.write(buffer.toByteArray());
+                        fos.flush();
+                        fos.close();
+                        return "OK";
+                    }
+                    catch (IOException e){
+
+                    }
+                }
+                catch (FileNotFoundException e){
+                }
+                }
+                return "Shit";
+            }
+            else{
+                return "OK";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String status) {
+            String imagePath=localstoragehandler.fileCacheFolder+"/"+filename;
+            if(status.equals("OK")){
+                if(type.equals(MessageInfo.MessageType.IMAGE)){
+                    ImageView imageView = new ImageView(context);
+                    BitmapLoaderTask task=new BitmapLoaderTask(imageView);
+                    task.execute(imagePath);
+                    imageView.setLayoutParams(params);
+                    messageHistoryLayout.addView(imageView);
+                }
+            }
+            else{
+
+            }
+            //super.onPostExecute(aVoid);
+        }
+    }
 	
 	
 	@Override

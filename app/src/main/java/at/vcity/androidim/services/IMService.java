@@ -33,6 +33,9 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import org.apache.http.util.ByteArrayBuffer;
+
 import at.vcity.androidim.Login;
 import at.vcity.androidim.Messaging;
 import at.vcity.androidim.R;
@@ -206,34 +209,28 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	}
 
 	
-	public String sendMessage(String  username, String  tousername, String message) throws UnsupportedEncodingException 
+	public String sendMessage(String  username, String  tousername, String message, String type) throws UnsupportedEncodingException
 	{			
 		String params = "username="+ URLEncoder.encode(this.username,"UTF-8") +
 						"&password="+ URLEncoder.encode(this.password,"UTF-8") +
 						"&to=" + URLEncoder.encode(tousername,"UTF-8") +
-						"&message="+ URLEncoder.encode(message,"UTF-8") +
+						"&content="+ URLEncoder.encode(message,"UTF-8") +
+                        "&type=" + URLEncoder.encode(type,"UTF-8") +
 						"&action="  + URLEncoder.encode("sendMessage","UTF-8")+
 						"&";		
 		Log.i("PARAMS", params);
 		return socketOperator.sendHttpRequest(params);		
 	}
 
-    public String sendData(String filepath){
-        File sourceFile=new File(filepath);
-        int maxBufferSize=5*1024*1024;
-        int bytesRead,bytesAvailable,bufferSize;
-        byte[] buffer;
-        try{
-            FileInputStream fileInputStream = new FileInputStream(sourceFile);
-            bytesAvailable=fileInputStream.available();
-            bufferSize=Math.min(bytesAvailable,maxBufferSize);
-            buffer=new byte[bufferSize];
+    public String sendData(String filename,String type,byte[] data)throws UnsupportedEncodingException
+    {
+        //String params="";
 
-            bytesRead=fileInputStream.read(buffer,0,bufferSize);
-        }
-         catch (Exception e){
-        }
-        return "";
+        return socketOperator.sendHttpData(filename,type,data);
+    }
+
+    public ByteArrayBuffer getData(String filename,String type){
+        return socketOperator.getHttpData(filename,type);
     }
 
 	
