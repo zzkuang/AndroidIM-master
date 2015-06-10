@@ -8,23 +8,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
 
 import android.util.Log;
 
 import org.apache.http.util.ByteArrayBuffer;
 
 import at.vcity.androidim.interfaces.IAppManager;
-import at.vcity.androidim.interfaces.ISocketOperator;
+import at.vcity.androidim.interfaces.INetworkOperator;
 
 
-public class NetworkOperator
+public class NetworkOperator implements INetworkOperator
 {
 	//private static final String AUTHENTICATION_SERVER_ADDRESS = "http://192.168.0.54/android-im/"; //TODO change to your WebAPI Address
 	// private static final String AUTHENTICATION_SERVER_ADDRESS = "http://192.168.33.64:9986"; //TODO change to your WebAPI Address

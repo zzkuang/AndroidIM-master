@@ -18,7 +18,6 @@ package at.vcity.androidim.services;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,8 +37,8 @@ import at.vcity.androidim.Login;
 import at.vcity.androidim.Messaging;
 import at.vcity.androidim.R;
 import at.vcity.androidim.communication.NetworkOperator;
+import at.vcity.androidim.interfaces.INetworkOperator;
 import at.vcity.androidim.interfaces.IAppManager;
-import at.vcity.androidim.interfaces.ISocketOperator;
 import at.vcity.androidim.interfaces.IUpdateData;
 import at.vcity.androidim.tools.FriendController;
 import at.vcity.androidim.tools.LocalStorageHandler;
@@ -73,7 +72,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	private String rawFriendList = new String();
 	private String rawMessageList = new String();
 
-    NetworkOperator networkOperator = new NetworkOperator(this);
+    INetworkOperator networkOperator = new NetworkOperator(this);
 
 	private final IBinder mBinder = new IMBinder();
 	private String username;
