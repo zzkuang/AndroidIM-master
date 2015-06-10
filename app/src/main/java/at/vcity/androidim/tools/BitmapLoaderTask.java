@@ -23,7 +23,6 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
     @Override
     protected Bitmap doInBackground(String... params) {
         filePath = params[0];
-
         return BitmapFactory.decodeFile(filePath) ;//decodeSampledBitmapFromResource(getResources(), data, 100, 100));
     }
 
