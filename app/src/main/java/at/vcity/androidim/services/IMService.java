@@ -16,8 +16,6 @@
 
 package at.vcity.androidim.services;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Random;
@@ -39,7 +37,7 @@ import org.apache.http.util.ByteArrayBuffer;
 import at.vcity.androidim.Login;
 import at.vcity.androidim.Messaging;
 import at.vcity.androidim.R;
-import at.vcity.androidim.communication.SocketOperator;
+import at.vcity.androidim.communication.NetworkOperator;
 import at.vcity.androidim.interfaces.IAppManager;
 import at.vcity.androidim.interfaces.ISocketOperator;
 import at.vcity.androidim.interfaces.IUpdateData;
@@ -75,7 +73,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	private String rawFriendList = new String();
 	private String rawMessageList = new String();
 
-	ISocketOperator socketOperator = new SocketOperator(this);
+    NetworkOperator networkOperator = new NetworkOperator(this);
 
 	private final IBinder mBinder = new IMBinder();
 	private String username;
@@ -109,28 +107,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
     	
     	// Timer is used to take the friendList info every UPDATE_TIME_PERIOD;
 		timer = new Timer();   
-		
-		Thread thread = new Thread()
-		{
-			@Override
-			public void run() {			
-				
-				//socketOperator.startListening(LISTENING_PORT_NO);
-				Random random = new Random();
-				int tryCount = 0;
-				while (socketOperator.startListening(10000 + random.nextInt(20000))  == 0 )
-				{		
-					tryCount++; 
-					if (tryCount > 10)
-					{
-						// if it can't listen a port after trying 10 times, give up...
-						break;
-					}
-					
-				}
-			}
-		};		
-		//thread.start();
+
     
     }
 
@@ -177,7 +154,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
         Intent i = new Intent(this, Messaging.class);
         i.putExtra(FriendInfo.USERNAME, username);
         i.putExtra(MessageInfo.CONTENT, msg);
-        
+        i.putExtra(MessageInfo.TYPE,msgtype);
         // The PendingIntent to launch our activity if the user selects this notification
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
                 i, PendingIntent.FLAG_UPDATE_CURRENT );
@@ -219,25 +196,25 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 						"&action="  + URLEncoder.encode("sendMessage","UTF-8")+
 						"&";		
 		Log.i("PARAMS", params);
-		return socketOperator.sendHttpRequest(params);		
+		return networkOperator.sendHttpRequest(params);
 	}
 
     public String sendData(String filename,String type,byte[] data)throws UnsupportedEncodingException
     {
         //String params="";
 
-        return socketOperator.sendHttpData(filename,type,data);
+        return networkOperator.sendHttpData(filename,type,data);
     }
 
     public ByteArrayBuffer getData(String filename,String type){
-        return socketOperator.getHttpData(filename,type);
+        return networkOperator.getHttpData(filename,type);
     }
 
 	
 	private String getFriendList() throws UnsupportedEncodingException 	{		
 		// after authentication, server replies with friendList xml
 		
-		 rawFriendList = socketOperator.sendHttpRequest(getAuthenticateUserParams(username, password));
+		 rawFriendList = networkOperator.sendHttpRequest(getAuthenticateUserParams(username, password));
 		 if (rawFriendList != null) {
 			 this.parseFriendInfo(rawFriendList);
 		 }
@@ -247,7 +224,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	private String getMessageList() throws UnsupportedEncodingException 	{		
 		// after authentication, server replies with friendList xml
 		
-		 rawMessageList = socketOperator.sendHttpRequest(getAuthenticateUserParams(username, password));
+		 rawMessageList = networkOperator.sendHttpRequest(getAuthenticateUserParams(username, password));
 		 if (rawMessageList != null) {
 			 this.parseMessageInfo(rawMessageList);
 		 }
@@ -269,7 +246,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		
 		this.authenticatedUser = false;
 		
-		String result = this.getFriendList(); //socketOperator.sendHttpRequest(getAuthenticateUserParams(username, password));
+		String result = this.getFriendList(); //networkOperator.sendHttpRequest(getAuthenticateUserParams(username, password));
 		if (result != null && !result.equals(Login.AUTHENTICATION_FAILED)) 
 		{			
 			// if user is authenticated then return string from server is not equal to AUTHENTICATION_FAILED
@@ -346,8 +323,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		String params = "username=" + URLEncoder.encode(usernameText,"UTF-8") +
 						"&password="+ URLEncoder.encode(passwordText,"UTF-8") +
 						"&action="  + URLEncoder.encode("authenticateUser","UTF-8")+
-						"&port="    + URLEncoder.encode(Integer.toString(socketOperator.getListeningPort()),"UTF-8") +
-						"&";		
+						"&";
 		
 		return params;		
 	}
@@ -377,8 +353,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 	public void exit() 
 	{
 		timer.cancel();
-		socketOperator.exit(); 
-		socketOperator = null;
+		networkOperator = null;
 		this.stopSelf();
 	}
 	
@@ -391,7 +366,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 						"&email=" + emailText+
 						"&";
 		
-		String result = socketOperator.sendHttpRequest(params);		
+		String result = networkOperator.sendHttpRequest(params);
 		
 		return result;
 	}
@@ -404,7 +379,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		"&friendUserName=" + friendUsername +
 		"&";
 
-		String result = socketOperator.sendHttpRequest(params);		
+		String result = networkOperator.sendHttpRequest(params);
 		
 		return result;
 	}
@@ -419,7 +394,7 @@ public class IMService extends Service implements IAppManager, IUpdateData {
 		"&discardedFriends=" +discardedFriendNames +
 		"&";
 
-		String result = socketOperator.sendHttpRequest(params);		
+		String result = networkOperator.sendHttpRequest(params);
 		
 		return result;
 		

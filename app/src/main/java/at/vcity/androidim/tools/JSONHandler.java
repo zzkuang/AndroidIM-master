@@ -51,7 +51,7 @@ public  class JSONHandler
                 friend.userName = friendjson.getString(FriendInfo.USERNAME);
                 String status = friendjson.getString(FriendInfo.STATUS);
                 friend.ip = friendjson.getString(FriendInfo.IP);
-                friend.port = friendjson.getString(FriendInfo.PORT);
+                //friend.port = friendjson.getString(FriendInfo.PORT);
                 friend.userKey = friendjson.getString(FriendInfo.USER_KEY);
 
                 if (status != null && status.equals("online"))

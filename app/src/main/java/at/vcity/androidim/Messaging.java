@@ -57,11 +57,6 @@ import at.vcity.androidim.tools.LocalStorageHandler;
 import at.vcity.androidim.types.FriendInfo;
 import at.vcity.androidim.types.MessageInfo;
 
-/*
-import com.koushikdutta.async.future.FutureCallback;
-import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.Response;
-*/
 
 public class Messaging extends Activity {
 
@@ -472,9 +467,11 @@ public class Messaging extends Activity {
                 messageHistoryLayout.addView(textView);
             }
         } else {
-            //String[] strings = {message, type};
-            //ShowDataObjectTask showDataObjectTask = new ShowDataObjectTask(this,message,type,params);
-            //showDataObjectTask.execute();
+            String[] strings = {message, type};
+            ImageView imageView = new ImageView(this);
+            messageHistoryLayout.addView(imageView);
+            ShowDataObjectTask showDataObjectTask = new ShowDataObjectTask(this,message,type,params,imageView);
+            showDataObjectTask.execute();
         }
     }
 
@@ -483,13 +480,15 @@ public class Messaging extends Activity {
         String filename;
         String type;
         LinearLayout.LayoutParams params;
+        ImageView imageView;
         boolean fileExists=false;
 
-        public ShowDataObjectTask(Context c,String fn,String t, LinearLayout.LayoutParams ll){
+        public ShowDataObjectTask(Context c,String fn,String t, LinearLayout.LayoutParams ll, ImageView iv){
             context=c;
             params=ll;
             filename=fn;
             type=t;
+            imageView=iv;
         }
 
         @Override
@@ -497,7 +496,9 @@ public class Messaging extends Activity {
             String imagePath=localstoragehandler.fileCacheFolder+"/"+filename;
             File file=new File(imagePath);
             fileExists=file.exists();
+
             if(!fileExists){
+                while(imService==null){}
                 ByteArrayBuffer buffer=imService.getData(filename, type);
                 if(buffer!=null){
                 try{
@@ -527,11 +528,11 @@ public class Messaging extends Activity {
             String imagePath=localstoragehandler.fileCacheFolder+"/"+filename;
             if(status.equals("OK")){
                 if(type.equals(MessageInfo.MessageType.IMAGE)){
-                    ImageView imageView = new ImageView(context);
+                    //ImageView imageView = new ImageView(context);
                     BitmapLoaderTask task=new BitmapLoaderTask(imageView);
                     task.execute(imagePath);
                     imageView.setLayoutParams(params);
-                    messageHistoryLayout.addView(imageView);
+                    //messageHistoryLayout.addView(imageView);
                 }
             }
             else{
